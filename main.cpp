@@ -33,7 +33,6 @@ public:
         auto memento = new Memento(data, size, capacity);
         undoStack.push_back(memento);
 
-        // Clear the redo stack when we save a new state
         for (auto &memento : redoStack) {
             delete memento;
         }
@@ -105,7 +104,7 @@ public:
     }
 
     void append(const char* text) {
-        careTaker.saveState(data, size, capacity);  // Save state before appending
+        careTaker.saveState(data, size, capacity);
         size_t len = strlen(text);
         while (size + len >= capacity) {
             resize(capacity * 2);
@@ -115,7 +114,7 @@ public:
     }
 
     void insertAndReplace(size_t pos, const char* substring, size_t replaceLen) {
-        careTaker.saveState(data, size, capacity);  // Save state before inserting/replacing
+        careTaker.saveState(data, size, capacity);
         size_t len = strlen(substring);
         if (size + len - replaceLen >= capacity) {
             resize((size + len - replaceLen) * 2);
@@ -126,7 +125,7 @@ public:
     }
 
     void deleteText(size_t pos, size_t len) {
-        careTaker.saveState(data, size, capacity);  // Save state before deleting
+        careTaker.saveState(data, size, capacity);
         if (pos >= size || pos + len > size) {
             std::cout << "Invalid position or length.\n";
             return;
@@ -137,7 +136,7 @@ public:
     }
 
     void cutText(size_t pos, size_t len) {
-        careTaker.saveState(data, size, capacity);  // Save state before cutting
+        careTaker.saveState(data, size, capacity);
         if (pos >= size || pos + len > size) {
             std::cout << "Invalid position or length.\n";
             return;
@@ -155,7 +154,7 @@ public:
     }
 
     void pasteText(size_t pos) {
-        careTaker.saveState(data, size, capacity);  // Save state before pasting
+        careTaker.saveState(data, size, capacity);
         if (pos > size) {
             std::cout << "Invalid position.\n";
             return;
@@ -230,6 +229,25 @@ public:
             std::cout << "Failed to load from " << filename << std::endl;
         }
     }
+    void insertWithReplacement(size_t line, size_t index, const char* text) {
+        careTaker.saveState(data, size, capacity);
+        size_t pos = 0;
+        while (line > 0 && pos < size) {
+            if (data[pos] == '\n') {
+                line--;
+            }
+            pos++;
+        }
+        pos += index;
+
+        size_t endPos = pos;
+        while (endPos < size && data[endPos] != ' ' && data[endPos] != '\n') {
+            endPos++;
+        }
+
+        size_t replaceLen = endPos - pos;
+        insertAndReplace(pos, text, replaceLen);
+    }
 };
 
 void menu_display() {
@@ -248,6 +266,7 @@ void menu_display() {
               << "12. Cut text\n"
               << "13. Copy text\n"
               << "14. Paste text\n"
+              << "15. Insert with replacement\n"
               << "0. Exit\n";
 }
 
@@ -314,12 +333,12 @@ int main() {
                 std::cout << "Enter the number of characters to replace at the insertion point (0 for none):\n";
                 size_t replaceLen;
                 std::cin >> replaceLen;
-                std::cin.ignore(); // consume newline
+                std::cin.ignore();
                 arr.insertAndReplace(pos, text.c_str(), replaceLen);
                 break;
             }
             case 8: {
-                system("clear");  // Adjust this for your platform
+                system("clear");
                 break;
             }
             case 9: {
@@ -334,7 +353,7 @@ int main() {
                 std::cout << "Enter the starting position and length to delete:\n";
                 size_t pos, len;
                 std::cin >> pos >> len;
-                std::cin.ignore();  // consume the newline
+                std::cin.ignore();
                 arr.deleteText(pos, len);
                 break;
             }
@@ -342,7 +361,7 @@ int main() {
                 std::cout << "Enter the starting position and length to cut:\n";
                 size_t pos, len;
                 std::cin >> pos >> len;
-                std::cin.ignore();  // consume the newline
+                std::cin.ignore();
                 arr.cutText(pos, len);
                 break;
             }
@@ -350,7 +369,7 @@ int main() {
                 std::cout << "Enter the starting position and length to copy:\n";
                 size_t pos, len;
                 std::cin >> pos >> len;
-                std::cin.ignore();  // consume the newline
+                std::cin.ignore();
                 arr.copyText(pos, len);
                 break;
             }
@@ -358,8 +377,19 @@ int main() {
                 std::cout << "Enter the position to paste:\n";
                 size_t pos;
                 std::cin >> pos;
-                std::cin.ignore();  // consume the newline
+                std::cin.ignore();
                 arr.pasteText(pos);
+                break;
+            }
+            case 15: {
+                size_t line, index;
+                std::cout << "Choose line and index: ";
+                std::cin >> line >> index;
+                std::cin.ignore(); // consume newline
+                std::cout << "Write text: ";
+                std::string text;
+                std::getline(std::cin, text);
+                arr.insertWithReplacement(line, index, text.c_str());
                 break;
             }
             case 0:
